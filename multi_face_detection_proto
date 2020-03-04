@@ -99,8 +99,8 @@ while (True):
 
     if(max(found) < foundThreshold): # no face matches, add new face
         current += 1
-        faces[current] = findFace()
-        names[current] = input("New name: ")
+        faces.append(findFace())
+        names.append(input("New name: "))
     else:
         current = names.index(max(found)) # set current face to best match
         print(found)
