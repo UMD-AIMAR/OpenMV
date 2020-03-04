@@ -23,20 +23,17 @@ foundThreshold = 75 # %keypoints match to consider match found
 face_cascade = image.HaarCascade("frontalface", stages=25) # facial recognition cascade
 print(face_cascade)
 
-
-
 # Reset sensor
-def resetSensor():
+sensor.reset()
+sensor.set_contrast(3)
+sensor.set_gainceiling(16)
+sensor.set_framesize(sensor.VGA)
+sensor.set_windowing((320, 240))
+sensor.set_pixformat(sensor.GRAYSCALE)
 
-    sensor.reset()
-    sensor.set_contrast(3)
-    sensor.set_gainceiling(16)
-    sensor.set_framesize(sensor.VGA)
-    sensor.set_windowing((320, 240))
-    sensor.set_pixformat(sensor.GRAYSCALE)
+# Skip a few frames to allow the sensor settle down
+sensor.skip_frames(time = 2000)
 
-    # Skip a few frames to allow the sensor settle down
-    sensor.skip_frames(time = 2000)
 
 def findFace():
 
@@ -87,8 +84,6 @@ def fps():
 # initialize
 current = 0
 faces.append(findFace())
-resetSensor()
-
 
 # main control loop
 while (True):
