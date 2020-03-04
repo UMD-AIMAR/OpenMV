@@ -1,0 +1,109 @@
+# Modified face tracking example code
+# Check match fit between current image and saved faces
+# Add new face keypoint data when no good match found
+# Track names alongisde faces
+
+
+# Face Tracking Example
+#
+# This example shows off using the keypoints feature of your OpenMV Cam to track
+# a face after it has been detected by a Haar Cascade. The first part of this
+# script finds a face in the image using the frontalface Haar Cascade.
+# After which the script uses the keypoints feature to automatically learn your
+# face and track it. Keypoints can be used to automatically track anything.
+import sensor, time, image
+
+faces = [] # list of face keypoint lists
+names = [] # list of names corresponding to faces
+
+foundThreshold = 75 # %keypoints match to consider match found
+
+# Load Haar Cascade
+# By default this will use all stages, lower stages is faster but less accurate.
+face_cascade = image.HaarCascade("frontalface", stages=25) # facial recognition cascade
+
+# Reset sensor
+def resetSensor():
+
+    sensor.reset()
+    sensor.set_contrast(3)
+    sensor.set_gainceiling(16)
+    sensor.set_framesize(sensor.VGA)
+    sensor.set_windowing((320, 240))
+    sensor.set_pixformat(sensor.GRAYSCALE)
+
+    # Skip a few frames to allow the sensor settle down
+    sensor.skip_frames(time = 2000)
+
+
+def findFace():
+
+    kpts = None
+
+    while (kpts == None):
+        img = sensor.snapshot()
+        img.draw_string(0, 0, "Looking for a face...")
+        # Find faces
+        objects = img.find_features(face_cascade, threshold=0.5, scale=1.25)
+        if objects:
+            # Expand the ROI by 31 pixels in every direction
+            face = (objects[0][0]-31, objects[0][1]-31,objects[0][2]+31*2, objects[0][3]+31*2)
+            # Extract keypoints using the detect face size as the ROI
+            kpts = img.find_keypoints(threshold=10, scale_factor=1.1, max_keypoints=100, roi=face)
+            # Draw a rectangle around the first face
+            img.draw_rectangle(objects[0])
+
+    return kpts
+
+
+def drawKpts():
+    # Draw keypoints of current face
+    img.draw_keypoints(faces[current], size=24)
+
+
+# see how closely current face matches stored faces
+def match():
+    img = sensor.snapshot()
+    # Extract keypoints from the whole frame
+    kpts = img.find_keypoints(threshold=10, scale_factor=1.1, max_keypoints=100, normalized=True)
+
+    if (kpts):
+        for i in range(faces.length):
+            c[i] = image.match_descriptor(kpts, faces[i], threshold=85)[5]
+        return c
+    else:
+        return -1 # no face found
+
+# advance clock and show fps
+def fps():
+    # FPS clock
+    clock = time.clock()
+    clock.tick()
+    # Draw FPS
+    img.draw_string(0, 0, "FPS:%.2f"%(clock.fps()))
+
+# initialize
+current = 0
+faces[current] = findFace()
+resetSensor()
+
+
+# main control loop
+while (True):
+
+    # get list of match fits
+    found = match()
+
+    if(max(found) < foundThreshold): # no face matches, add new face
+        current += 1
+        faces[current] = findFace()
+        names[current] = input("New name: ")
+    else:
+        current = names.index(max(found)) # set current face to best match
+        print(found)
+        print("Best match: " + names[current])
+
+    fps()
+    drawKpts()
+
+
