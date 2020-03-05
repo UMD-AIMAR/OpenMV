@@ -33,7 +33,7 @@ sensor.set_pixformat(sensor.GRAYSCALE)
 
 # Skip a few frames to allow the sensor settle down
 sensor.skip_frames(time = 2000)
-
+c = [0,0,0,0,0,0,0]
 
 def findFace():
 
@@ -54,7 +54,7 @@ def findFace():
 
     return kpts
 
-
+print(input("Test"))
 def drawKpts():
     # Draw keypoints of current face
     img.draw_keypoints(faces[current], size=24)
@@ -62,12 +62,11 @@ def drawKpts():
 
 # see how closely current face matches stored faces
 def match():
-    img = sensor.snapshot()
     # Extract keypoints from the whole frame
     kpts = img.find_keypoints(threshold=10, scale_factor=1.1, max_keypoints=100, normalized=True)
 
     if (kpts):
-        for i in range(faces.length):
+        for i in range(len(faces)):
             c[i] = image.match_descriptor(kpts, faces[i], threshold=85)[5]
         return c
     else:
@@ -84,9 +83,11 @@ def fps():
 # initialize
 current = 0
 faces.append(findFace())
+faces.append(input("Enter new name: "))
 
 # main control loop
 while (True):
+    img = sensor.snapshot()
 
     # get list of match fits
     found = match()
@@ -94,9 +95,12 @@ while (True):
     if(max(found) < foundThreshold): # no face matches, add new face
         current += 1
         faces.append(findFace())
-        names.append(input("New name: "))
+        names.append("new name #"+str(current))
     else:
-        current = names.index(max(found)) # set current face to best match
+        current = found.index(max(found)) # set current face to best match
+        print(current)
+        print(len(faces))
+        print(len(names))
         print(found)
         print("Best match: " + names[current])
 
