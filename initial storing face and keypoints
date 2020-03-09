@@ -1,0 +1,71 @@
+# Initial Storing Face and Keypoints - By: horne - Mon Mar 2 2020
+
+# Show the camera an object
+# and then run the script. The script will extract and save a keypoints descriptor and the image.
+# You can use the keypoints_editor.py util to remove unwanted keypoints.
+#
+# NOTE: Please reset the camera after running this script to see the new file.
+import sensor, time, image
+
+# Reset sensor
+sensor.reset()
+
+# Sensor settings
+sensor.set_contrast(3)
+sensor.set_gainceiling(16)
+sensor.set_framesize(sensor.VGA)
+sensor.set_windowing((320, 240))
+sensor.set_pixformat(sensor.GRAYSCALE)
+
+sensor.skip_frames(time = 2000)
+
+# Load Haar Cascade
+# By default this will use all stages, lower stages is faster but less accurate.
+face_cascade = image.HaarCascade("frontalface", stages=25)
+# print(face_cascade)
+
+# First set of keypoints
+kpts1 = None
+
+# Find a face!
+while (kpts1 == None):
+    img = sensor.snapshot()
+    img.draw_string(0, 0, "Looking for a face...")
+    # Find faces
+    objects = img.find_features(face_cascade, threshold=0.5, scale=1.25)
+    if objects:
+        # Expand the ROI by 31 pixels in every direction
+        face = (objects[0][0]-31, objects[0][1]-31,objects[0][2]+31*2, objects[0][3]+31*2)
+        # Extract keypoints using the detect face size as the ROI
+        kpts1 = img.find_keypoints(threshold=10, scale_factor=1.1, max_keypoints=100, roi=face)
+        # Draw a rectangle around the first face
+        img.draw_rectangle(objects[0])
+        #redo if unclear
+        # Draw keypoints
+        print(kpts1)
+        if (len(kpts1) < 80):
+            print("Picture unclear. Please try again")
+            kpts1 = None
+
+img.draw_keypoints(kpts1, size=24)
+img = sensor.snapshot()
+time.sleep(2000)
+
+
+FILE_NAME = "desc"
+img = sensor.snapshot()
+# NOTE: See the docs for other arguments
+# NOTE: By default find_keypoints returns multi-scale keypoints extracted from an image pyramid.
+
+kpts = img.find_keypoints(max_keypoints=150, threshold=10, scale_factor=1.2)
+
+if (kpts == None):
+    raise(Exception("Couldn't find any keypoints!"))
+
+image.save_descriptor(kpts, "/%s.orb"%(FILE_NAME))
+img.save("/%s.pgm"%(FILE_NAME))
+
+img.draw_keypoints(kpts)
+sensor.snapshot()
+time.sleep(1000)
+raise(Exception("Done! Please reset the camera"))
